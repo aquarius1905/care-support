@@ -1,43 +1,72 @@
-import React from 'react';
-import { StyleSheet, Text, View, FlatList, SafeAreaView, StatusBar, ListRenderItemInfo } from 'react-native';
+import React, { useState } from 'react';
+import { StyleSheet, FlatList, SafeAreaView, StatusBar } from 'react-native';
+import { useTransportUsers } from '@/hooks/useTransportUsers';
+import { TransportUser } from '@/types';
+import Header from '@/components/Header';
+import TransportUserItem from '@/components/TransportUserItem';
+import TimePickerModal from '@/components/TimePickerModal';
 
-// データの型を定義
-interface AppointmentItem {
-  id: number;
-  name: string;
-  time: string;
-}
+const initialTransportUsers: TransportUser[] = [
+  { id: 1, name: "田中 太郎", time: "08:30" },
+  { id: 2, name: "佐藤 花子", time: "09:00" }
+];
 
 export default function App() {
-  // サンプルデータ
-  const data: AppointmentItem[] = [
-    { id: 1, name: "田中 太郎", time: "08:30" },
-    { id: 2, name: "佐藤 花子", time: "09:00" }
-  ];
+  const { transportUsers, updateTransportTime } = useTransportUsers(initialTransportUsers);
 
-  // 各アイテムのレンダリング（型付き）
-  const renderItem = ({ item }: ListRenderItemInfo<AppointmentItem>) => (
-    <View style={styles.item}>
-      <View style={styles.infoContainer}>
-        <Text style={styles.name}>{item.name}</Text>
-        <View style={styles.timeContainer}>
-          <Text style={styles.timeLabel}>予約時間</Text>
-          <Text style={styles.time}>{item.time}</Text>
-        </View>
-      </View>
-    </View>
-  );
+  // 時間選択用の状態
+  const [showTimePicker, setShowTimePicker] = useState(false);
+  const [selectedUserId, setSelectedAppointmentId] = useState<number | null>(null);
+  const [selectedTime, setSelectedTime] = useState(new Date());
+
+  // 時間編集モーダルを開く
+  const openTimePicker = (id: number, timeString: string) => {
+    // 現在の時間文字列をDateオブジェクトに変換
+    const [hours, minutes] = timeString.split(':').map(Number);
+    const date = new Date();
+    date.setHours(hours, minutes, 0, 0);
+    
+    setSelectedTime(date);
+    setSelectedAppointmentId(id);
+    setShowTimePicker(true);
+  };
+
+  // 時間変更を確定
+  const confirmTimeChange = (selectedDate: Date) => {
+    if (selectedUserId) {
+      const newTime = `${String(selectedDate.getHours()).padStart(2, '0')}:${String(selectedDate.getMinutes()).padStart(2, '0')}`;
+      updateTransportTime(selectedUserId, newTime);
+    }
+    setShowTimePicker(false);
+  };
+
+  // キャンセル処理
+  const cancelTimeChange = () => {
+    setShowTimePicker(false);
+  };
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>ご利用者様一覧</Text>
-      </View>
-      <FlatList<AppointmentItem>
-        data={data}
-        renderItem={renderItem}
+      <Header title="ご利用者様一覧" />
+
+      <FlatList<TransportUser>
+        data={transportUsers}
+        renderItem={({ item }) => (
+          <TransportUserItem
+            item={item}
+            onTimePress={openTimePicker}
+          />
+        )}
         keyExtractor={item => item.id.toString()}
         contentContainerStyle={styles.list}
+      />
+
+      <TimePickerModal
+        visible={showTimePicker}
+        selectedTime={selectedTime}
+        onCancel={cancelTimeChange}
+        onConfirm={confirmTimeChange}
+        onTimeChange={setSelectedTime}
       />
     </SafeAreaView>
   );
@@ -49,64 +78,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#f0f6ff',
     paddingTop: StatusBar.currentHeight || 0,
   },
-  header: {
-    backgroundColor: '#447FFF',
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    borderBottomLeftRadius: 15,
-    borderBottomRightRadius: 15,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: '600',
-    color: 'white',
-    textAlign: 'center',
-  },
   list: {
     padding: 16,
-  },
-  item: {
-    backgroundColor: '#f8f9fa',
-    padding: 16,
-    marginVertical: 12,
-    borderRadius: 12,
-    borderLeftWidth: 5,
-    borderLeftColor: '#447FFF',
-    flexDirection: 'row',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.3,
-    shadowRadius: 3,
-    elevation: 3,
-  },
-  infoContainer: {
-    flex: 1,
-  },
-  name: {
-    fontSize: 20,
-    fontWeight: '500',
-    color: '#333',
-    marginBottom: 6,
-  },
-  timeContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 4,
-  },
-  timeLabel: {
-    fontSize: 16,
-    color: '#447FFF',
-    marginRight: 8,
-  },
-  time: {
-    fontSize: 20,
-    color: '#4a6fa5',
-    fontWeight: '500',
   },
 });
