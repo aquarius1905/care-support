@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { StyleSheet, FlatList, SafeAreaView, StatusBar } from 'react-native';
+import Toast from 'react-native-root-toast';
 import { useTransportUsers } from '@/hooks/useTransportUsers';
 import { TransportUser } from '@/types';
 import Header from '@/components/Header';
@@ -10,6 +11,27 @@ const initialTransportUsers: TransportUser[] = [
   { id: 1, name: "田中 太郎", time: "08:30" },
   { id: 2, name: "佐藤 花子", time: "09:00" }
 ];
+
+// トースト表示用のヘルパー関数
+const showToast = (message: string, isSuccess: boolean = true) => {
+  Toast.show(message, {
+    duration: Toast.durations.LONG,
+    position: Toast.positions.BOTTOM,
+    shadow: true,
+    animation: true,
+    hideOnPress: true,
+    delay: 0,
+    backgroundColor: isSuccess ? '#4CAF50' : '#F44336', // 成功は緑、失敗は赤
+    textStyle: {
+      fontSize: 40,
+      fontWeight: 'bold',
+    },
+    containerStyle: {
+      padding: 15,
+      borderRadius: 10,
+    },
+  });
+};
 
 export default function App() {
   const { transportUsers, updateTransportTime } = useTransportUsers(initialTransportUsers);
@@ -34,8 +56,14 @@ export default function App() {
   // 時間変更を確定
   const confirmTimeChange = (selectedDate: Date) => {
     if (selectedUserId) {
-      const newTime = `${String(selectedDate.getHours()).padStart(2, '0')}:${String(selectedDate.getMinutes()).padStart(2, '0')}`;
-      updateTransportTime(selectedUserId, newTime);
+      try {
+        const newTime = `${String(selectedDate.getHours()).padStart(2, '0')}:${String(selectedDate.getMinutes()).padStart(2, '0')}`;
+        updateTransportTime(selectedUserId, newTime);
+
+        showToast('送迎時間を更新しました', true);
+      } catch (error) {
+        showToast('送迎時間の変更に失敗しました', false);
+      }
     }
     setShowTimePicker(false);
   };
@@ -68,6 +96,7 @@ export default function App() {
         onConfirm={confirmTimeChange}
         onTimeChange={setSelectedTime}
       />
+
     </SafeAreaView>
   );
 }
