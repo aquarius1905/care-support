@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { StyleSheet, FlatList, SafeAreaView, StatusBar } from 'react-native';
 import Toast from 'react-native-root-toast';
 import { useTransportUsers } from '@/hooks/useTransportUsers';
@@ -34,13 +34,46 @@ const showToast = (message: string, isSuccess: boolean = true) => {
 };
 
 export default function App() {
-  const { transportUsers, updateTransportTime } = useTransportUsers(initialTransportUsers);
-
+  const [transportUsers, setTransportUsers] = useState<TransportUser[]>([]);
   // 時間選択用の状態
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [selectedUserId, setSelectedAppointmentId] = useState<number | null>(null);
   const [selectedTime, setSelectedTime] = useState(new Date());
 
+  // APIからその日の送迎者一覧を取得
+  useEffect(() => {
+    const fetchTransportUsers = async () => {
+      const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+      try {
+        const res = await fetch(`http://192.168.1.2:8000/api/transport-schedules/?date=${today}`);
+        const data = await res.json();
+        if(data.results.length === 0) {
+          showToast('送迎者がいません', false);
+          return;
+        }
+        const mapped = data.results.map((item: any) => ({
+          id: item.id,
+          name: item.user_name,
+          time: new Date(item.scheduled_transport_datetime).toTimeString().slice(0, 5), // "HH:MM"
+        }));
+        setTransportUsers(mapped);
+      } catch (error) {
+        console.error(error);
+        showToast('データの取得に失敗しました', false);
+      }
+    };
+
+    fetchTransportUsers();
+  }, []);
+
+  const updateTransportTime = (id: number, newTime: string) => {
+    setTransportUsers(prev =>
+      prev.map(user =>
+        user.id === id ? { ...user, time: newTime } : user
+      )
+    );
+  };
+  
   // 時間編集モーダルを開く
   const openTimePicker = (id: number, timeString: string) => {
     // 現在の時間文字列をDateオブジェクトに変換
