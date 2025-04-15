@@ -1,6 +1,11 @@
-// app/index.tsx
-import LoginScreen from './login';
+import React from 'react';
+import { AuthProvider } from '@/contexts/AuthContext';
+import AppNavigator from '@/app/AppNavigator';
 
 export default function App() {
-  return <LoginScreen />;
+  return (
+    <AuthProvider>
+      <AppNavigator />
+    </AuthProvider>
+  );
 }

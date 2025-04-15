@@ -17,11 +17,13 @@ import { router } from 'expo-router';
 import Toast from 'react-native-root-toast';
 import Header from '@/components/Header';
 import { API_URL } from '@/constants/constants';
+import { useAuth } from '@/contexts/AuthContext';
 
 const LoginScreen: React.FC = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const { login } = useAuth(); // 認証コンテキストを使用
 
   // トースト表示用のヘルパー関数
   const showToast = (message: string, isSuccess: boolean = true) => {
@@ -64,12 +66,12 @@ const LoginScreen: React.FC = () => {
           password
         }),
       });
-      console.log(result)
+      
       const data = await result.json();
       
       if (result.ok) {
-        // トークンを保存（実際のアプリでは安全な保存方法を使用する）
-        // 例: AsyncStorage や SecureStore などを使用
+        // トークンをAuthContextを通じて保存
+        await login(data.access); // JWTトークンの保存（APIのレスポンス形式に合わせて調整）
         showToast('ログインに成功しました', true);
         // 利用者画面に遷移
         router.replace('/userlist');
@@ -85,8 +87,11 @@ const LoginScreen: React.FC = () => {
     }
   };
 
+  // 残りのコードは変更なし...
+
   return (
     <SafeAreaView style={styles.container}>
+      {/* 既存のコード */}
       <Header title="ログイン" />
       
       <KeyboardAvoidingView 
