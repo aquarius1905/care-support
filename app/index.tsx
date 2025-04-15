@@ -6,6 +6,7 @@ import { TransportUser } from '@/types';
 import Header from '@/components/Header';
 import TransportUserItem from '@/components/TransportUserItem';
 import TimePickerModal from '@/components/TimePickerModal';
+import { API_URL } from '@/constants/constants';
 
 const initialTransportUsers: TransportUser[] = [
   { id: 1, name: "田中 太郎", time: "08:30" },
@@ -44,23 +45,23 @@ export default function App() {
   useEffect(() => {
     const fetchTransportUsers = async () => {
       const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
-      try {
-        const res = await fetch(`http://192.168.1.2:8000/api/transport-schedules/?date=${today}`);
-        const data = await res.json();
-        if(data.results.length === 0) {
-          showToast('送迎者がいません', false);
-          return;
-        }
-        const mapped = data.results.map((item: any) => ({
-          id: item.id,
-          name: item.user_name,
-          time: new Date(item.scheduled_transport_datetime).toTimeString().slice(0, 5), // "HH:MM"
-        }));
-        setTransportUsers(mapped);
-      } catch (error) {
-        console.error(error);
-        showToast('データの取得に失敗しました', false);
-      }
+      // try {
+      //   const res = await fetch(`${API_URL}/transport-schedules/?date=${today}`);
+      //   const data = await res.json();
+      //   if(data.results.length === 0) {
+      //     showToast('送迎者がいません', false);
+      //     return;
+      //   }
+      //   const mapped = data.results.map((item: any) => ({
+      //     id: item.id,
+      //     name: item.user_name,
+      //     time: new Date(item.scheduled_transport_datetime).toTimeString().slice(0, 5), // "HH:MM"
+      //   }));
+      //   setTransportUsers(mapped);
+      // } catch (error) {
+      //   console.error(error);
+      //   showToast('データの取得に失敗しました', false);
+      // }
     };
 
     fetchTransportUsers();
