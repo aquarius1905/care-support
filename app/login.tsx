@@ -71,8 +71,8 @@ const LoginScreen: React.FC = () => {
         // トークンを保存（実際のアプリでは安全な保存方法を使用する）
         // 例: AsyncStorage や SecureStore などを使用
         showToast('ログインに成功しました', true);
-        // ホーム画面に遷移
-        router.replace('/');
+        // 利用者画面に遷移
+        router.replace('/userlist');
       } else {
         // エラーメッセージを表示
         showToast(data.detail || 'ログインに失敗しました', false);
