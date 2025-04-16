@@ -16,8 +16,8 @@ import {
 import { router } from 'expo-router';
 import Toast from 'react-native-root-toast';
 import Header from '@/components/Header';
-import { API_URL } from '@/constants/constants';
 import { useAuth } from '@/contexts/AuthContext';
+import { login as apiLogin } from '@/utils/api';
 
 const LoginScreen: React.FC = () => {
   const [username, setUsername] = useState('');
@@ -56,22 +56,14 @@ const LoginScreen: React.FC = () => {
     setIsLoading(true);
     
     try {
-      const result = await fetch(`${API_URL}/token/`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          username,
-          password
-        }),
-      });
+      // APIヘルパーを使用してログイン
+      const result = await apiLogin(username, password);
       
       const data = await result.json();
       
       if (result.ok) {
         // トークンをAuthContextを通じて保存
-        await login(data.access); // JWTトークンの保存（APIのレスポンス形式に合わせて調整）
+        await login(data.access); // JWTトークンの保存
         showToast('ログインに成功しました', true);
         // 利用者画面に遷移
         router.replace('/userlist');
@@ -87,11 +79,8 @@ const LoginScreen: React.FC = () => {
     }
   };
 
-  // 残りのコードは変更なし...
-
   return (
     <SafeAreaView style={styles.container}>
-      {/* 既存のコード */}
       <Header title="ログイン" />
       
       <KeyboardAvoidingView 

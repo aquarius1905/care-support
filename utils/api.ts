@@ -4,6 +4,23 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const AUTH_TOKEN_KEY = 'auth_token';
 
+// ログインAPI（認証前）
+export const login = async (username: string, password: string) => {
+  const response = await fetch(`${API_URL}/token/`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      username,
+      password
+    }),
+  });
+  
+  // レスポンスを返す
+  return response;
+};
+
 // 認証済みのAPIリクエストを送信する関数
 export const fetchWithAuth = async (endpoint: string, options: RequestInit = {}) => {
   // トークンを取得

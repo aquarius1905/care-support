@@ -5,9 +5,10 @@ import { TransportUser } from '@/types';
 import Header from '@/components/Header';
 import TransportUserItem from '@/components/TransportUserItem';
 import TimePickerModal from '@/components/TimePickerModal';
-import { API_URL } from '@/constants/constants';
 import { useAuth } from '@/contexts/AuthContext';
 import { router } from 'expo-router';
+// APIヘルパーをインポート
+import { get, patch, fetchWithAuth } from '@/utils/api';
 
 // トースト表示用のヘルパー関数
 const showToast = (message: string, isSuccess: boolean = true) => {
@@ -36,40 +37,39 @@ export default function UserList() {
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [selectedUserId, setSelectedAppointmentId] = useState<number | null>(null);
   const [selectedTime, setSelectedTime] = useState(new Date());
-  const { authToken, isAuthenticated, logout } = useAuth(); // ログアウト関数を取得
+  const { isAuthenticated, logout } = useAuth(); // ログアウト関数を取得
 
   // APIからその日の送迎者一覧を取得
   useEffect(() => {
     const fetchTransportUsers = async () => {
       const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
       try {
-        const res = await fetch(`${API_URL}/transport-schedules/?date=${today}`, {
-          headers: {
-            'Authorization': `Bearer ${authToken}`, // 認証トークンをヘッダーに追加
-            'Content-Type': 'application/json',
-          }
-        });
-
-        if (!res.ok) {
+        // APIヘルパーを使用
+        const response = await fetchWithAuth(`/transport-schedules/?date=${today}`);
+        
+        if (!response.ok) {
           // 401エラーの場合はログイン画面にリダイレクト
-          if (res.status === 401) {
+          if (response.status === 401) {
             showToast('認証エラー：再度ログインしてください', false);
             router.replace('/login');
             return;
           }
           throw new Error('APIエラー');
         }
-
-        const data = await res.json();
+        
+        const data = await response.json();
+        
         if(data.results.length === 0) {
           showToast('送迎者がいません', false);
           return;
         }
+        
         const mapped = data.results.map((item: any) => ({
           id: item.id,
           name: item.user_name,
           time: new Date(item.scheduled_transport_datetime).toTimeString().slice(0, 5), // "HH:MM"
         }));
+        
         setTransportUsers(mapped);
       } catch (error) {
         console.error(error);
@@ -81,7 +81,7 @@ export default function UserList() {
       fetchTransportUsers();
     }
     
-  }, [authToken, isAuthenticated]);
+  }, [isAuthenticated]);
 
   // ログアウト処理
   const handleLogout = () => {
@@ -110,24 +110,11 @@ export default function UserList() {
 
   // 時間変更API呼び出し
   const updateTransportTime = async (id: number, newTime: string) => {
-    if (!authToken) return;
-    
     try {
-      // API呼び出しでデータを更新
-      const response = await fetch(`${API_URL}/transport-schedules/${id}/`, {
-        method: 'PATCH',
-        headers: {
-          'Authorization': `Bearer ${authToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          time: newTime
-        }),
+      // APIヘルパーを使用して更新
+      const response = await patch(`/transport-schedules/${id}/`, {
+        time: newTime
       });
-      
-      if (!response.ok) {
-        throw new Error('更新に失敗しました');
-      }
       
       // 成功したら画面のデータを更新
       setTransportUsers(prev =>
