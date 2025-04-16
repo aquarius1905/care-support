@@ -1,14 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, FlatList, SafeAreaView, StatusBar } from 'react-native';
+import { StyleSheet, FlatList, SafeAreaView, StatusBar, Alert } from 'react-native';
 import Toast from 'react-native-root-toast';
-import { useTransportUsers } from '@/hooks/useTransportUsers';
 import { TransportUser } from '@/types';
 import Header from '@/components/Header';
 import TransportUserItem from '@/components/TransportUserItem';
 import TimePickerModal from '@/components/TimePickerModal';
 import { API_URL } from '@/constants/constants';
-import { useAuth } from '@/contexts/AuthContext'; // 追加
-import { router } from 'expo-router'; // 追加
+import { useAuth } from '@/contexts/AuthContext';
+import { router } from 'expo-router';
 
 // トースト表示用のヘルパー関数
 const showToast = (message: string, isSuccess: boolean = true) => {
@@ -37,7 +36,7 @@ export default function UserList() {
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [selectedUserId, setSelectedAppointmentId] = useState<number | null>(null);
   const [selectedTime, setSelectedTime] = useState(new Date());
-  const { authToken, isAuthenticated } = useAuth(); // 認証状態を取得
+  const { authToken, isAuthenticated, logout } = useAuth(); // ログアウト関数を取得
 
   // APIからその日の送迎者一覧を取得
   useEffect(() => {
@@ -83,6 +82,31 @@ export default function UserList() {
     }
     
   }, [authToken, isAuthenticated]);
+
+  // ログアウト処理
+  const handleLogout = () => {
+    Alert.alert(
+      "ログアウト確認",
+      "ログアウトしますか？",
+      [
+        { text: "キャンセル", style: "cancel" },
+        { 
+          text: "ログアウト", 
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await logout();
+              showToast('ログアウトしました', true);
+              router.replace('/login');
+            } catch (error) {
+              console.error(error);
+              showToast('ログアウトに失敗しました', false);
+            }
+          }
+        }
+      ]
+    );
+  };
 
   // 時間変更API呼び出し
   const updateTransportTime = async (id: number, newTime: string) => {
@@ -157,7 +181,11 @@ export default function UserList() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Header title="ご利用者様一覧" />
+      <Header 
+        title="ご利用者様一覧" 
+        showLogout={true}
+        onLogout={handleLogout}
+      />
 
       <FlatList<TransportUser>
         data={transportUsers}
