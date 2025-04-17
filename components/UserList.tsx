@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, FlatList, SafeAreaView, StatusBar, Alert } from 'react-native';
+import { StyleSheet, FlatList, SafeAreaView, StatusBar, Alert, View, ActivityIndicator } from 'react-native';
 import Toast from 'react-native-root-toast';
 import { TransportUser } from '@/types';
 import Header from '@/components/Header';
@@ -8,7 +8,7 @@ import TimePickerModal from '@/components/TimePickerModal';
 import { useAuth } from '@/contexts/AuthContext';
 import { router } from 'expo-router';
 // APIヘルパーをインポート
-import { get, patch, fetchWithAuth } from '@/utils/api';
+import { get, patch } from '@/utils/api';
 
 // トースト表示用のヘルパー関数
 const showToast = (message: string, isSuccess: boolean = true) => {
@@ -37,30 +37,21 @@ export default function UserList() {
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [selectedUserId, setSelectedAppointmentId] = useState<number | null>(null);
   const [selectedTime, setSelectedTime] = useState(new Date());
+  const [isLoading, setIsLoading] = useState(true); // ローディング状態を追加
   const { isAuthenticated, logout } = useAuth(); // ログアウト関数を取得
 
   // APIからその日の送迎者一覧を取得
   useEffect(() => {
     const fetchTransportUsers = async () => {
+      setIsLoading(true); // データ取得開始時にローディング表示
       const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
       try {
-        // APIヘルパーを使用
-        const response = await fetchWithAuth(`/transport-schedules/?date=${today}`);
-        
-        if (!response.ok) {
-          // 401エラーの場合はログイン画面にリダイレクト
-          if (response.status === 401) {
-            showToast('認証エラー：再度ログインしてください', false);
-            router.replace('/login');
-            return;
-          }
-          throw new Error('APIエラー');
-        }
-        
-        const data = await response.json();
+        // get関数を使用
+        const data = await get(`/transport-schedules/?date=${today}`);
         
         if(data.results.length === 0) {
           showToast('送迎者がいません', false);
+          setIsLoading(false);
           return;
         }
         
@@ -73,12 +64,24 @@ export default function UserList() {
         setTransportUsers(mapped);
       } catch (error) {
         console.error(error);
+        // 認証エラーの場合
+        if (error instanceof Error && error.message === '認証エラー') {
+          showToast('認証エラー：再度ログインしてください', false);
+          router.replace('/login');
+          return;
+        }
         showToast('データの取得に失敗しました', false);
+      } finally {
+        setIsLoading(false); // データ取得完了時にローディング非表示
       }
     };
 
     if (isAuthenticated) {
+      console.log("認証済み - API呼び出し開始");
       fetchTransportUsers();
+    } else {
+      console.log("未認証 - API呼び出しスキップ");
+      setIsLoading(true); // 認証されていない場合はローディング表示
     }
     
   }, [isAuthenticated]);
@@ -174,17 +177,23 @@ export default function UserList() {
         onLogout={handleLogout}
       />
 
-      <FlatList<TransportUser>
-        data={transportUsers}
-        renderItem={({ item }) => (
-          <TransportUserItem
-            item={item}
-            onTimePress={openTimePicker}
-          />
-        )}
-        keyExtractor={item => item.id.toString()}
-        contentContainerStyle={styles.list}
-      />
+      {isLoading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#447FFF" />
+        </View>
+      ) : (
+        <FlatList<TransportUser>
+          data={transportUsers}
+          renderItem={({ item }) => (
+            <TransportUserItem
+              item={item}
+              onTimePress={openTimePicker}
+            />
+          )}
+          keyExtractor={item => item.id.toString()}
+          contentContainerStyle={styles.list}
+        />
+      )}
 
       <TimePickerModal
         visible={showTimePicker}
@@ -206,5 +215,10 @@ const styles = StyleSheet.create({
   },
   list: {
     padding: 16,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });

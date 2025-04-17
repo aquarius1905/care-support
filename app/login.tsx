@@ -58,7 +58,6 @@ const LoginScreen: React.FC = () => {
     try {
       // APIヘルパーを使用してログイン
       const result = await apiLogin(username, password);
-      
       const data = await result.json();
       
       if (result.ok) {
