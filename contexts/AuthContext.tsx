@@ -53,7 +53,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       // AsyncStorageにトークンを保存
       await AsyncStorage.setItem(AUTH_TOKEN_KEY, token);
+      console.log('トークン保存完了');
       setAuthToken(token);
+      console.log('状態更新完了');
     } catch (error) {
       console.error('トークンの保存に失敗しました:', error);
       throw error;

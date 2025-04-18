@@ -58,7 +58,7 @@ export default function UserList() {
         const mapped = data.results.map((item: any) => ({
           id: item.id,
           name: item.user_name,
-          time: new Date(item.scheduled_transport_datetime).toTimeString().slice(0, 5), // "HH:MM"
+          time: new Date(item.scheduled_transport_datetime).toLocaleTimeString('ja-JP', {hour: '2-digit', minute: '2-digit'})
         }));
         
         setTransportUsers(mapped);
