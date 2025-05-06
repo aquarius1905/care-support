@@ -6,8 +6,8 @@ export default function Layout() {
   return (
     <RootSiblingParent>
       <AuthProvider>
-        <Stack />
-        <Stack.Screen options={{ headerShown: false }} />
+        <Stack screenOptions={{ headerShown: false }}>
+        </Stack>
       </AuthProvider>
     </RootSiblingParent>
   );
