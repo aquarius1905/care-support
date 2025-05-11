@@ -1,3 +1,5 @@
+import api, { ApiError } from '@/utils/api';
+import React, { useState } from 'react';
 import {
   ActivityIndicator,
   Keyboard,
@@ -10,18 +12,15 @@ import {
   TouchableWithoutFeedback,
   View
 } from 'react-native';
-import React, { useState } from 'react';
 
-import { ApiError } from '@/utils/api';
 import Header from '@/components/Header';
-import LoginStyles from '@/styles/LoginStyles';
-import api from '@/utils/api';
-import { router } from 'expo-router';
-import showToast from '@/utils/showToast';
 import { useAuth } from '@/contexts/AuthContext';
+import LoginStyles from '@/styles/LoginStyles';
+import showToast from '@/utils/showToast';
+import { router } from 'expo-router';
 
 const LoginScreen: React.FC = () => {
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
@@ -29,8 +28,8 @@ const LoginScreen: React.FC = () => {
 
   const handleLogin = async () => {
     // 入力検証
-    if (!username.trim() || !password.trim()) {
-      setErrorMessage('ユーザー名とパスワードを入力してください')
+    if (!email.trim() || !password.trim()) {
+      setErrorMessage('メールアドレスとパスワードを入力してください')
       return;
     }
     
@@ -38,7 +37,7 @@ const LoginScreen: React.FC = () => {
     setErrorMessage('');
     
     try {
-      const authTokens = await api.login(username, password);
+      const authTokens = await api.login(email, password);
       
       // トークンをAuthContextを通じて保存
       await login(authTokens.access, authTokens.refresh);
@@ -69,12 +68,12 @@ const LoginScreen: React.FC = () => {
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
           <View style={LoginStyles.innerContainer}>
             <View style={LoginStyles.formContainer}>
-              <Text style={LoginStyles.label}>ユーザー名</Text>
+              <Text style={LoginStyles.label}>メールアドレス</Text>
               <TextInput
                 style={LoginStyles.input}
-                value={username}
-                onChangeText={setUsername}
-                placeholder="ユーザー名を入力"
+                value={email}
+                onChangeText={setEmail}
+                placeholder="メールアドレスを入力"
                 autoCapitalize="none"
                 autoCorrect={false}
               />
